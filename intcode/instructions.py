@@ -147,7 +147,7 @@ class JumpIfTrueInstruction:
         b = self.params[1].resolve(program_state)
 
         if a != 0:
-            return b, []
+            return b, [], io_state
 
         return self.new_pointer(), [], io_state
 
@@ -168,7 +168,7 @@ class JumpIfFalseInstruction:
         b = self.params[1].resolve(program_state)
 
         if a == 0:
-            return b, []
+            return b, [], io_state
 
         return self.new_pointer(), [], io_state
 
