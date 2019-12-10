@@ -19,6 +19,9 @@ class IntComputer:
     def set_io_state(self, inputs, output_to_shell):
         self.io_state = IOState(inputs, output_to_shell)
 
+    def append_input(self, value):
+        self.io_state.add_input(value)
+
     def _commit_mutation(self, mutation):
         self.internal_program_state = mutation.apply(self.internal_program_state)
 
@@ -31,7 +34,7 @@ class IntComputer:
             self._commit_mutation(mutation)
 
     def run_program(self):
-        while not self.io_state.exited:
+        while not self.io_state.is_halted():
             instruction = get_instruction(self.prog_pointer, self.internal_program_state)
             self._process_instruction(instruction)
 

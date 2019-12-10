@@ -46,20 +46,35 @@ class TestCase:
 
 class IOState:
 
-    def __init__(self, inputs=[], output_to_shell=True):
+    def __init__(self, inputs=None, output_to_shell=True):
         self.inputs = inputs
         self.output_to_shell = output_to_shell
         self.outputs = []
         self.exited = False
+        self.awaiting_input = False
+    
+    def is_halted(self):
+        return self.exited or self.awaiting_input
 
     def get_input(self):
-        if self.inputs:
-            self.inputs.reverse()
-            next_element = self.inputs.pop()
-            self.inputs.reverse()
-            return next_element
+        if self.inputs is not None:
+            if self.inputs:
+                self.inputs.reverse()
+                next_element = self.inputs.pop()
+                self.inputs.reverse()
+                return next_element
+            else:
+                self.awaiting_input = True
+                return
 
         return int(input("Input required:"))
+
+    def add_input(self, value):
+        if self.inputs is not None:
+            self.inputs.append(value)
+
+        if self.awaiting_input:
+            self.awaiting_input = False
 
     def output(self, value):
         self.outputs.append(value)

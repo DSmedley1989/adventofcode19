@@ -109,6 +109,9 @@ class UserInputInstruction:
     def process(self, program_state, io_state):
         a = io_state.get_input()
 
+        if a is None:
+            return self.pointer, [], io_state
+
         mutations = [out.assign(a) for out in self.outputs]
 
         return self.new_pointer(), mutations, io_state
