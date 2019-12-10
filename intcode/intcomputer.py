@@ -23,7 +23,7 @@ class IntComputer:
         self.io_state.add_input(value)
 
     def _commit_mutation(self, mutation):
-        self.internal_program_state = mutation.apply(self.internal_program_state)
+        self.internal_program_state = mutation.apply(self.internal_program_state, self.io_state)
 
     def _process_instruction(self, instruction):
         new_pointer, mutations, new_io_state = instruction.process(self.internal_program_state, self.io_state)

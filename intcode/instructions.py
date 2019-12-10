@@ -34,7 +34,7 @@ def _get_args(pointer, input_modes, program_state, num_inputs, num_outputs):
     args_with_mode = list(zip(modes, args))
 
     params = [Parameter(i[0], i[1]) for i in args_with_mode[0:num_inputs]]
-    outputs = [Output(i[1]) for i in args_with_mode[-num_outputs:]]
+    outputs = [Output(i[0], i[1]) for i in args_with_mode[-num_outputs:]]
 
     return params, outputs
 
@@ -63,8 +63,8 @@ class AdditionInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         result = a + b
 
@@ -85,8 +85,8 @@ class MultiplicationInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         result = a * b
 
@@ -129,7 +129,7 @@ class OutputInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        io_state.output(self.params[0].resolve(program_state))
+        io_state.output(self.params[0].resolve(program_state, io_state))
 
         return self.new_pointer(), [], io_state
 
@@ -146,8 +146,8 @@ class JumpIfTrueInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         if a != 0:
             return b, [], io_state
@@ -167,8 +167,8 @@ class JumpIfFalseInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         if a == 0:
             return b, [], io_state
@@ -188,8 +188,8 @@ class LessThanInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         result = 1 if a < b else 0
 
@@ -210,14 +210,32 @@ class EqualsInstruction:
         self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
 
     def process(self, program_state, io_state):
-        a = self.params[0].resolve(program_state)
-        b = self.params[1].resolve(program_state)
+        a = self.params[0].resolve(program_state, io_state)
+        b = self.params[1].resolve(program_state, io_state)
 
         result = 1 if a == b else 0
 
         mutations = [out.assign(result) for out in self.outputs]
 
         return self.new_pointer(), mutations, io_state
+
+class AdjustRelativeBaseInstruction:
+    input_args = 1
+    output_args = 0
+
+    def new_pointer(self):
+        return _new_pointer(self.pointer, self.input_args + self.output_args)
+
+    def __init__(self, pointer, program_state, input_modes):
+        self.pointer = pointer
+        self.params, self.outputs = _get_args(pointer, input_modes, program_state, self.input_args, self.output_args)
+
+    def process(self, program_state, io_state):
+        adjustment_value = self.params[0].resolve(program_state, io_state)
+
+        io_state.adjust_relative_base(adjustment_value)
+
+        return self.new_pointer(), [], io_state
 
 
 def get_instruction(pointer, program_state):
@@ -249,4 +267,7 @@ def get_instruction(pointer, program_state):
 
     if command == 8:
         return EqualsInstruction(pointer, program_state, input_modes)
+
+    if command == 9:
+        return AdjustRelativeBaseInstruction(pointer, program_state, input_modes)
 
